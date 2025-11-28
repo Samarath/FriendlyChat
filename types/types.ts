@@ -23,6 +23,7 @@ export interface HeaderProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   userCount: number;
+  isDesktop?: boolean;
 }
 
 export type Message = {
