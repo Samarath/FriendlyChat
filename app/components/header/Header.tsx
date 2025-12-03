@@ -1,5 +1,15 @@
-import { HeaderProps } from "@/types/types";
 import { Users } from "lucide-react";
+
+interface HeaderProps {
+  loggedInUser: {
+    name: string;
+    avatar: string;
+  };
+  tabs: string[];
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  userCount: number;
+}
 
 const Header = ({
   loggedInUser,
@@ -8,6 +18,7 @@ const Header = ({
   onTabChange,
   userCount,
 }: HeaderProps) => {
+  console.log(tabs, "tabssss");
   return (
     <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 lg:px-6 lg:py-4">
       <div className="flex items-center gap-3 lg:gap-6">
@@ -21,21 +32,19 @@ const Header = ({
         </div>
 
         <div className="flex items-center gap-1.5 lg:gap-2">
-          {tabs
-            .filter((tab) => tab !== "DMs")
-            .map((tab) => (
-              <button
-                key={tab}
-                onClick={() => onTabChange(tab)}
-                className={`rounded-full px-3 py-1 lg:px-4 lg:py-1.5 text-xs lg:text-sm font-medium transition-all ${
-                  activeTab === tab
-                    ? "border border-teal-400/60 bg-teal-400/10 text-teal-300"
-                    : "text-white/60 hover:text-white/80"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => onTabChange(tab)}
+              className={`rounded-full px-3 py-1 lg:px-4 lg:py-1.5 text-xs lg:text-sm font-medium transition-all ${
+                activeTab === tab
+                  ? "border border-teal-400/60 bg-teal-400/10 text-teal-300"
+                  : "text-white/60 hover:text-white/80"
+              } ${tab === "DMs" ? "max-lg:hidden" : ""}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
 
