@@ -121,13 +121,13 @@ export function GuestLoginForm({
             </div>
           </div>
 
-          <div className="bg-[#0d1521] rounded-xl p-4 border border-[#2a3441]">
+          {/* <div className="bg-[#0d1521] rounded-xl p-4 border border-[#2a3441]">
             <p className="text-sm text-gray-400 leading-relaxed">
               <span className="text-[#2dd4bf] font-medium">Note:</span> As a
               guest, your messages will be temporary and you{"'"}ll have limited
               features. Create an account for the full experience!
             </p>
-          </div>
+          </div> */}
 
           <button
             type="submit"
