@@ -31,7 +31,6 @@ export default function RootLayout({
         <StarryBackground />
         {/* <Header /> */}
         <main>{children}</main>
-        <ChatPanel />
       </body>
     </html>
   );

@@ -1,3 +1,5 @@
+import { AuthContainer } from "./auth/auth-container";
+
 export default function Home() {
-  return <div>{/* <h1>chat app</h1> */}</div>;
+  return <AuthContainer />;
 }

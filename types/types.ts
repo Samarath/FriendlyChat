@@ -55,3 +55,32 @@ export type ChatBoxProps = {
     mediaUrl?: string
   ) => void;
 };
+
+export interface LoginFormProps {
+  onSwitchToRegister: () => void;
+  onSwitchToGuest: () => void;
+  onLogin: (data: { username: string; password: string }) => void;
+}
+
+export interface RegisterFormProps {
+  onSwitchToLogin: () => void;
+  onRegister: (data: {
+    email: string;
+    username: string;
+    password: string;
+    gender: string;
+    age: string;
+    privacyAccepted: boolean;
+  }) => void;
+}
+
+export interface GuestLoginFormProps {
+  onSwitchToLogin: () => void;
+  onGuestLogin: (data: {
+    username: string;
+    gender: string;
+    age: string;
+  }) => void;
+}
+
+export type AuthView = "login" | "register" | "guest";
