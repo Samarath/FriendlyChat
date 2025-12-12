@@ -6,9 +6,12 @@ import { LoginForm } from "../components/login/login";
 import { RegisterForm } from "../components/register/register";
 import { GuestLoginForm } from "../components/login/guest-login";
 import { AuthView } from "@/types/types";
+import { useRouter } from "next/navigation";
 
 export function AuthContainer() {
   const [currentView, setCurrentView] = useState<AuthView>("guest");
+
+  const navigate = useRouter();
 
   const handleLogin = (data: { username: string; password: string }) => {
     console.log("Login:", data);
@@ -31,6 +34,7 @@ export function AuthContainer() {
     age: string;
   }) => {
     console.log("Guest Login:", data);
+    navigate.push("/user-chat");
   };
 
   return (
