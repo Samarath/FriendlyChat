@@ -6,6 +6,8 @@ import Header from "../header/Header";
 import { Message, User } from "@/types/types";
 import { ChatBox } from "../chat-box/Chatbox";
 import { MessageSquare, Users, X } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hook";
+import { startUserListener } from "@/lib/listeners/userListeners";
 
 const tabs = ["Group Chat", "Nearby Chat", "DMs"];
 
@@ -15,6 +17,27 @@ export function ChatPanel() {
   const [currentMessageUser, setCurrentMessageUser] = useState<User>();
   const [isDmsSliderOpen, setIsDmsSliderOpen] = useState(false);
   const [isUsersSliderOpen, setIsUsersSliderOpen] = useState(false);
+
+  const dispatch = useAppDispatch();
+  const { user: currentActiveUser } = useAppSelector((state) => state.auth); // Get current user's data
+  const { allUsers, loading, error } = useAppSelector((state) => state.chat);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    // Ensuring the current user is registered before starting the listener
+    if (currentActiveUser?.authId) {
+      unsubscribe = startUserListener(dispatch, currentActiveUser.authId);
+    }
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [dispatch, currentActiveUser?.authId]);
+
+  console.log(allUsers, "checking all users");
+  console.log(error, "checking all erros");
 
   const loggedInUser = {
     name: "Raj Kishor",

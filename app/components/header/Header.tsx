@@ -18,7 +18,6 @@ const Header = ({
   onTabChange,
   userCount,
 }: HeaderProps) => {
-  console.log(tabs, "tabssss");
   return (
     <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 lg:px-6 lg:py-4">
       <div className="flex items-center gap-3 lg:gap-6">

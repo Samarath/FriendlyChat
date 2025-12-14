@@ -7,11 +7,14 @@ import { RegisterForm } from "../components/register/register";
 import { GuestLoginForm } from "../components/login/guest-login";
 import { AuthView } from "@/types/types";
 import { useRouter } from "next/navigation";
+import { useAppDispatch } from "@/lib/store/hook";
+import { registerGuest } from "@/lib/store/slices/authSlices";
 
 export function AuthContainer() {
   const [currentView, setCurrentView] = useState<AuthView>("guest");
 
   const navigate = useRouter();
+  const dispatch = useAppDispatch();
 
   const handleLogin = (data: { username: string; password: string }) => {
     console.log("Login:", data);
@@ -28,13 +31,13 @@ export function AuthContainer() {
     console.log("Register:", data);
   };
 
-  const handleGuestLogin = (data: {
+  const handleGuestLogin = async (data: {
     username: string;
     gender: string;
     age: string;
   }) => {
-    console.log("Guest Login:", data);
-    navigate.push("/user-chat");
+    await dispatch(registerGuest(data));
+    navigate.push("user-chat");
   };
 
   return (

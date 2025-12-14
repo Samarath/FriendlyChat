@@ -84,3 +84,25 @@ export interface GuestLoginFormProps {
 }
 
 export type AuthView = "login" | "register" | "guest";
+
+export interface GuestUser {
+  authId: string;
+  name: string;
+  country: string;
+  age: number;
+  gender: string;
+  city?: string;
+  initials: string;
+}
+
+export interface ChatUser extends GuestUser {
+  status: "Active" | "Inactive";
+  lastActive: string;
+  country: string;
+}
+
+export interface AuthState {
+  user: GuestUser | null;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
+}
