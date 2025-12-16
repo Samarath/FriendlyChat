@@ -28,7 +28,7 @@ export interface HeaderProps {
 
 export type Message = {
   id: string;
-  senderId: string;
+  senderId: string | null;
   text: string;
   timestamp: Date;
   type: "text" | "image" | "video";
@@ -36,13 +36,14 @@ export type Message = {
 };
 
 export type User = {
-  id: string;
+  authId: string;
   name: string;
-  initials: string;
-  location: string;
-  isOnline: boolean;
+  initials?: string;
+  country: string;
   age?: number;
   gender?: string;
+  lastActive?: string;
+  status: string;
 };
 
 export type ChatBoxProps = {

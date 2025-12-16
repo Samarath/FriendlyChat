@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import UserListCard from "../user-list-card/UserListCard";
 import Header from "../header/Header";
 import { Message, User } from "@/types/types";
@@ -8,6 +8,9 @@ import { ChatBox } from "../chat-box/Chatbox";
 import { MessageSquare, Users, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hook";
 import { startUserListener } from "@/lib/listeners/userListeners";
+import { getChatId } from "@/utility/chat/ChatUtilityFun";
+import { socket } from "@/lib/socket/socket";
+import Loader from "@/utility/loader/Loader";
 
 const tabs = ["Group Chat", "Nearby Chat", "DMs"];
 
@@ -17,368 +20,120 @@ export function ChatPanel() {
   const [currentMessageUser, setCurrentMessageUser] = useState<User>();
   const [isDmsSliderOpen, setIsDmsSliderOpen] = useState(false);
   const [isUsersSliderOpen, setIsUsersSliderOpen] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
-  const { user: currentActiveUser } = useAppSelector((state) => state.auth); // Get current user's data
-  const { allUsers, loading, error } = useAppSelector((state) => state.chat);
+  const { user: currentActiveUser } = useAppSelector((state) => state.auth);
+  const { allUsers, error, loading } = useAppSelector((state) => state.chat);
+  // console.log(loading, "checking loading");
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
-    // Ensuring the current user is registered before starting the listener
     if (currentActiveUser?.authId) {
       unsubscribe = startUserListener(dispatch, currentActiveUser.authId);
+
+      // Socket.IO Connection and Identification
+      if (!socket.connected) {
+        socket.connect();
+      }
+      // Emit USER_IDENTIFY to tell the server who we are
+      socket.emit("USER_IDENTIFY", currentActiveUser.authId);
     }
+
+    // Disconnect socket on unmount
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
+      if (socket.connected) {
+        // We rely on the server's 'disconnect' listener (on the user's socket)
+      }
     };
   }, [dispatch, currentActiveUser?.authId]);
 
-  console.log(allUsers, "checking all users");
-  console.log(error, "checking all erros");
+  const handleReceiveMessage = useCallback(
+    (payload: any) => {
+      // The payload comes from the backend's io.to().emit('RECEIVE_MESSAGE', payload)
+      const newMessage: Message = {
+        id: payload.id || Date.now().toString(),
+        senderId: payload.senderId,
+        text: payload.content,
+        timestamp: new Date(payload.timestamp),
+        type: payload.type || "text",
+        mediaUrl: payload.mediaUrl,
+      };
 
-  const loggedInUser = {
-    name: "Raj Kishor",
-    avatar: "RK",
-  };
+      // Only add the message to the state if it belongs to the currently active chat
+      if (payload.chatId === currentChatId) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
 
-  const users = [
-    {
-      id: "1",
-      name: "Raj Kishor",
-      initials: "RK",
-      location: "Bihar, India",
-      age: 25,
-      gender: "male",
-      isOnline: false,
+      //If chatId != currentChatId, show a notification/DM badge
     },
-    {
-      id: "2",
-      name: "Aarav Mehta",
-      initials: "AM",
-      location: "Delhi, India",
-      age: 28,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "3",
-      name: "Sofia Martinez",
-      initials: "SM",
-      location: "Madrid, Spain",
-      age: 32,
-      gender: "female",
-      isOnline: true,
-    },
-    {
-      id: "4",
-      name: "Liam Anderson",
-      initials: "LA",
-      location: "Sydney, Australia",
-      age: 27,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "5",
-      name: "Noah Johnson",
-      initials: "NJ",
-      location: "New York, USA",
-      age: 30,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "6",
-      name: "Emma Williams",
-      initials: "EW",
-      location: "Toronto, Canada",
-      age: 26,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "7",
-      name: "Olivia Brown",
-      initials: "OB",
-      location: "London, UK",
-      age: 29,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "8",
-      name: "Ethan Miller",
-      initials: "EM",
-      location: "Chicago, USA",
-      age: 33,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "9",
-      name: "Mia Singh",
-      initials: "MS",
-      location: "Punjab, India",
-      age: 24,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "10",
-      name: "Lucas Garcia",
-      initials: "LG",
-      location: "Barcelona, Spain",
-      age: 31,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "11",
-      name: "Isabella Wilson",
-      initials: "IW",
-      location: "Auckland, New Zealand",
-      age: 28,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "12",
-      name: "Benjamin Davis",
-      initials: "BD",
-      location: "Texas, USA",
-      age: 34,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "13",
-      name: "Aanya Verma",
-      initials: "AV",
-      location: "Mumbai, India",
-      age: 22,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "14",
-      name: "Hiro Tanaka",
-      initials: "HT",
-      location: "Tokyo, Japan",
-      age: 29,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "15",
-      name: "Chloe Martin",
-      initials: "CM",
-      location: "Paris, France",
-      age: 27,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "16",
-      name: "Daniel Kim",
-      initials: "DK",
-      location: "Seoul, South Korea",
-      age: 30,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "17",
-      name: "Natalie Schmidt",
-      initials: "NS",
-      location: "Berlin, Germany",
-      age: 33,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "18",
-      name: "Adam Jensen",
-      initials: "AJ",
-      location: "Copenhagen, Denmark",
-      age: 31,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "19",
-      name: "Ella Thompson",
-      initials: "ET",
-      location: "Melbourne, Australia",
-      age: 25,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "20",
-      name: "Arjun Reddy",
-      initials: "AR",
-      location: "Hyderabad, India",
-      age: 26,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "21",
-      name: "Victor Rossi",
-      initials: "VR",
-      location: "Rome, Italy",
-      age: 34,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "22",
-      name: "Sara Ahmed",
-      initials: "SA",
-      location: "Dubai, UAE",
-      age: 29,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "23",
-      name: "Markus Svensson",
-      initials: "MS",
-      location: "Stockholm, Sweden",
-      age: 32,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "24",
-      name: "Nina Petrova",
-      initials: "NP",
-      location: "Moscow, Russia",
-      age: 30,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "25",
-      name: "Carlos Lima",
-      initials: "CL",
-      location: "São Paulo, Brazil",
-      age: 27,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "26",
-      name: "Alicia Torres",
-      initials: "AT",
-      location: "Lima, Peru",
-      age: 28,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "27",
-      name: "David Lee",
-      initials: "DL",
-      location: "Singapore",
-      age: 26,
-      gender: "male",
-      isOnline: false,
-    },
-    {
-      id: "28",
-      name: "Emma Johansson",
-      initials: "EJ",
-      location: "Oslo, Norway",
-      age: 31,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "29",
-      name: "Yara Hassan",
-      initials: "YH",
-      location: "Cairo, Egypt",
-      age: 23,
-      gender: "female",
-      isOnline: false,
-    },
-    {
-      id: "30",
-      name: "Leo Müller",
-      initials: "LM",
-      location: "Vienna, Austria",
-      age: 35,
-      gender: "male",
-      isOnline: false,
-    },
-  ];
-
-  const currentUser: User = {
-    id: "1",
-    name: "Raj Kishor",
-    initials: "RK",
-    location: "Bihar, India",
-    isOnline: true,
-  };
-
-  const demoUser: User = {
-    id: "2",
-    name: "Sofia Martinez",
-    initials: "SM",
-    location: "Madrid, Spain",
-    isOnline: true,
-  };
-  // eslint-disable-next-line
-  const NOW = Date.now();
-
-  const initialMessages: Message[] = [
-    {
-      id: "1",
-      senderId: "2",
-      text: "Hey! How are you doing?",
-      timestamp: new Date(NOW - 1000 * 60 * 5),
-      type: "text",
-    },
-    {
-      id: "2",
-      senderId: "1",
-      text: "I'm good, thanks! Just working on some new features.",
-      timestamp: new Date(NOW - 1000 * 60 * 3),
-      type: "text",
-    },
-    {
-      id: "3",
-      senderId: "2",
-      text: "That sounds exciting! What kind of features?",
-      timestamp: new Date(NOW - 1000 * 60 * 1),
-      type: "text",
-    },
-  ];
+    [currentChatId]
+  );
 
   useEffect(() => {
-    setMessages(initialMessages);
-    setCurrentMessageUser(demoUser);
-  }, []);
+    // Set up the listener when the component mounts
+    socket.on("RECEIVE_MESSAGE", handleReceiveMessage);
 
-  const handleSendMessage = (
-    text: string,
-    type: "text" | "image" | "video",
-    mediaUrl?: string
-  ) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: currentUser.id,
-      text,
-      timestamp: new Date(),
-      type,
-      mediaUrl,
+    // Cleanup: Remove the listener when the component unmounts
+    return () => {
+      socket.off("RECEIVE_MESSAGE", handleReceiveMessage);
     };
+  }, [handleReceiveMessage]);
 
-    setMessages((prev) => [...prev, newMessage]);
+  const handleUserSelect = (user: User) => {
+    if (!currentActiveUser) return;
+
+    // Calculate the deterministic Chat ID
+    const chatId = getChatId(currentActiveUser.authId, user.authId);
+    setCurrentChatId(chatId);
+
+    // Set the recipient user for the ChatBox header
+    setCurrentMessageUser(user);
+
+    // Close mobile sliders
+    setIsUsersSliderOpen(false);
+    setIsDmsSliderOpen(false);
+
+    // FUTURE: Load previous messages for this chatId from Firestore
+    // For now, reset messages to an empty array when switching users.
+    setMessages([]);
+  };
+
+  const handleSendMessage = useCallback(
+    (text: string, type: "text" | "image" | "video", mediaUrl?: string) => {
+      if (!currentActiveUser || !currentMessageUser) return;
+
+      const payload = {
+        recipientId: currentMessageUser.authId,
+        content: text,
+        type: type,
+        mediaUrl: mediaUrl,
+      };
+
+      // 1. Emit the message to the backend for persistence & delivery
+      socket.emit("SEND_MESSAGE", payload);
+
+      // 2. Optimistic Update (Add message to local state immediately)
+      const optimisticMessage: Message = {
+        id: Date.now().toString(),
+        senderId: currentActiveUser.authId,
+        text,
+        timestamp: new Date(),
+        type,
+        mediaUrl,
+      };
+      setMessages((prev) => [...prev, optimisticMessage]);
+    },
+    [currentActiveUser, currentMessageUser]
+  );
+
+  const loggedInUser = {
+    name: currentActiveUser?.name || "Unknown",
+    avatar: currentActiveUser?.name?.[0]?.toUpperCase() || "?",
   };
 
   return (
@@ -390,7 +145,7 @@ export function ChatPanel() {
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          userCount={users.length}
+          userCount={allUsers?.length || 0}
         />
 
         {/* Main content area - takes remaining height */}
@@ -400,25 +155,31 @@ export function ChatPanel() {
             <ChatBox
               selectedUser={currentMessageUser}
               messages={messages}
-              currentUser={currentUser}
+              currentUser={currentActiveUser}
               onSendMessage={handleSendMessage}
+              setCurrentMessageUser={handleUserSelect}
             />
           </div>
 
           {/* Right sidebar - All Users (Desktop only) */}
           <div className="hidden lg:flex w-80 flex-col">
             <div className="custom-scrollbar flex-1 overflow-y-auto">
-              {users?.map((user) => (
-                <UserListCard
-                  key={user.name}
-                  name={user.name}
-                  country={user.location}
-                  age={user.age}
-                  gender={user.gender}
-                  setCurrentMessageUser={setCurrentMessageUser}
-                  user={user}
-                />
-              ))}
+              {loading ? (
+                <div>
+                  {" "}
+                  <Loader LoadingText="getting users..." />
+                </div>
+              ) : (
+                allUsers
+                  ?.filter((u) => u.authId !== currentActiveUser?.authId)
+                  .map((user) => (
+                    <UserListCard
+                      key={user.authId}
+                      setCurrentMessageUser={handleUserSelect}
+                      user={user}
+                    />
+                  ))
+              )}
             </div>
           </div>
         </div>
@@ -495,7 +256,7 @@ export function ChatPanel() {
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-teal-400" />
                 <h3 className="text-lg font-semibold text-white">
-                  All Users ({users.length})
+                  All Users ({allUsers?.length || 0})
                 </h3>
               </div>
               <button
@@ -508,17 +269,19 @@ export function ChatPanel() {
 
             {/* Users Content */}
             <div className="flex-1 overflow-y-auto">
-              {users?.map((user) => (
-                <UserListCard
-                  key={user.name}
-                  name={user.name}
-                  country={user.location}
-                  age={user.age}
-                  gender={user.gender}
-                  setCurrentMessageUser={setCurrentMessageUser}
-                  user={user}
-                />
-              ))}
+              {loading ? (
+                <Loader LoadingText="getting users..." />
+              ) : (
+                allUsers
+                  ?.filter((u) => u.authId !== currentActiveUser?.authId)
+                  .map((user) => (
+                    <UserListCard
+                      key={user.authId}
+                      setCurrentMessageUser={handleUserSelect}
+                      user={user}
+                    />
+                  ))
+              )}
             </div>
           </div>
         </div>

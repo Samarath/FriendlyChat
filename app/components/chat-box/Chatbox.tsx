@@ -81,7 +81,7 @@ export function ChatBox({
       <div className="flex flex-shrink-0 items-center gap-3 bg-[#242938] px-4 py-3 lg:px-6 lg:py-4">
         <div className="flex h-8 w-8 lg:h-10 lg:w-10 items-center justify-center rounded-full bg-[#3dd8ad] text-white">
           <span className="text-xs lg:text-sm font-semibold">
-            {selectedUser.initials}
+            {selectedUser?.name[0].toUpperCase()}
           </span>
         </div>
         <div className="flex-1 min-w-0">
@@ -89,7 +89,7 @@ export function ChatBox({
             {selectedUser.name}
           </h2>
           <p className="text-xs text-gray-400 truncate">
-            {selectedUser.location}
+            {selectedUser.country}
           </p>
         </div>
         <div className="flex items-center gap-2 lg:gap-3">
@@ -103,16 +103,18 @@ export function ChatBox({
           <div className="hidden lg:flex items-center gap-2">
             <span
               className={`h-2 w-2 rounded-full ${
-                selectedUser.isOnline ? "bg-[#3dd8ad]" : "bg-gray-500"
+                selectedUser.status === "Active"
+                  ? "bg-[#3dd8ad]"
+                  : "bg-gray-500"
               }`}
             />
             <span className="text-xs text-gray-400">
-              {selectedUser.isOnline ? "Online" : "Offline"}
+              {selectedUser.status === "Active" ? "Online" : "Offline"}
             </span>
           </div>
           <span
             className={`lg:hidden h-2 w-2 rounded-full ${
-              selectedUser.isOnline ? "bg-[#3dd8ad]" : "bg-gray-500"
+              selectedUser.status === "Active" ? "bg-[#3dd8ad]" : "bg-gray-500"
             }`}
           />
         </div>
@@ -122,7 +124,7 @@ export function ChatBox({
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         <div className="flex flex-col gap-3 lg:gap-4">
           {messages?.map((message) => {
-            const isCurrentUser = message.senderId === currentUser.id;
+            const isCurrentUser = message.senderId === currentUser.authId;
             return (
               <div
                 key={message.id}

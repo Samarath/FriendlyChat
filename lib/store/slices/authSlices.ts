@@ -2,8 +2,37 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { AuthState, GuestUser } from "../../../types/types";
 import api from "@/lib/api/api";
 
+const USER_STORAGE_KEY = "friendly_chat_guest";
+
+export const loadUserFromStorage = (): GuestUser | null => {
+  if (typeof window !== "undefined") {
+    const storedUser = sessionStorage.getItem(USER_STORAGE_KEY);
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (e) {
+        console.error("Failed to parse user data from storage:", e);
+        return null;
+      }
+    }
+  }
+  return null;
+};
+
+const saveUserToStorage = (user: GuestUser) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  }
+};
+
+const clearUserFromStorage = () => {
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem(USER_STORAGE_KEY);
+  }
+};
+
 const initialState: AuthState = {
-  user: null,
+  user: loadUserFromStorage(),
   status: "idle",
   error: null,
 };
@@ -37,10 +66,14 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    setUser(state, action) {
+      state.user = action.payload;
+    },
     clearUser(state) {
       state.user = null;
       state.status = "idle";
       state.error = null;
+      clearUserFromStorage();
     },
   },
   extraReducers: (builder) => {
@@ -52,6 +85,7 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload;
         state.error = null;
+        saveUserToStorage(action.payload);
       })
       .addCase(registerGuest.rejected, (state, action) => {
         state.status = "failed";
@@ -60,5 +94,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearUser } = authSlice.actions;
+export const { clearUser, setUser } = authSlice.actions;
 export default authSlice.reducer;

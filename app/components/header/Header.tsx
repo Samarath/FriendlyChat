@@ -2,8 +2,8 @@ import { Users } from "lucide-react";
 
 interface HeaderProps {
   loggedInUser: {
-    name: string;
-    avatar: string;
+    name: string | undefined;
+    avatar: string | undefined;
   };
   tabs: string[];
   activeTab: string;
