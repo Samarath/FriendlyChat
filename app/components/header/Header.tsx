@@ -1,4 +1,5 @@
 import { Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   loggedInUser: {
@@ -9,6 +10,7 @@ interface HeaderProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   userCount: number;
+  isPersonal?: boolean;
 }
 
 const Header = ({
@@ -17,7 +19,13 @@ const Header = ({
   activeTab,
   onTabChange,
   userCount,
+  isPersonal,
 }: HeaderProps) => {
+  const navigate = useRouter();
+  const handleTabChange = (tab: string) => {
+    onTabChange(tab);
+    navigate.push("/user-chat");
+  };
   return (
     <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 lg:px-6 lg:py-4">
       <div className="flex items-center gap-3 lg:gap-6">
@@ -34,7 +42,7 @@ const Header = ({
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => onTabChange(tab)}
+              onClick={() => handleTabChange(tab)}
               className={`rounded-full px-3 py-1 lg:px-4 lg:py-1.5 text-xs lg:text-sm font-medium transition-all ${
                 activeTab === tab
                   ? "border border-teal-400/60 bg-teal-400/10 text-teal-300"
@@ -49,7 +57,7 @@ const Header = ({
 
       <div className="flex items-center gap-3 lg:gap-6">
         <span className="hidden lg:inline text-sm text-white/70">
-          All Users ({userCount})
+          {isPersonal ? `DMs (${userCount})` : `All Users (${userCount})`}
         </span>
 
         <div className="flex items-center gap-3">

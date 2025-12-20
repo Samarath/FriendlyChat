@@ -29,10 +29,13 @@ export interface HeaderProps {
 export type Message = {
   id: string;
   senderId: string | null;
-  text: string;
+  text?: string;
+  content?: string;
   timestamp: Date;
   type: "text" | "image" | "video";
   mediaUrl?: string;
+  message?: string;
+  chatId?: string;
 };
 
 export type User = {

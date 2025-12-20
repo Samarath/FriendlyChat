@@ -1,5 +1,6 @@
 import { User } from "@/types/types";
 import { User2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 interface UserProps {
@@ -8,10 +9,13 @@ interface UserProps {
 }
 
 const UserListCard: React.FC<UserProps> = ({ setCurrentMessageUser, user }) => {
-  const { name, country, age, gender, status } = user;
+  const { name, country, age, gender, status, authId } = user;
+
+  const navigate = useRouter();
 
   const handleCardClick = () => {
     setCurrentMessageUser(user);
+    navigate.push(`/user-chat/${authId}`);
   };
 
   const getBackgroundColor = () => {

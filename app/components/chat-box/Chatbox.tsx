@@ -154,15 +154,18 @@ export function ChatBox({
                       className="mb-2 max-h-48 lg:max-h-60 rounded-lg"
                     />
                   )}
-                  {message.text && (
-                    <p className="text-xs lg:text-sm">{message.text}</p>
-                  )}
+                  {message.message ||
+                    (message.content && (
+                      <p className="text-xs lg:text-sm">
+                        {message.message || message.content}
+                      </p>
+                    ))}
                   <span
                     className={`mt-1 block text-xs ${
                       isCurrentUser ? "text-white/70" : "text-gray-400"
                     }`}
                   >
-                    {message.timestamp.toLocaleTimeString([], {
+                    {new Date(message.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}

@@ -1,81 +1,67 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import UserListCard from "../user-list-card/UserListCard";
-import Header from "../header/Header";
-// return <ChatContainer showDmsTab={true} />;
-import { Message, User } from "@/types/types";
-import { ChatBox } from "../chat-box/Chatbox";
+import { useEffect, useState } from "react";
+import Header from "../components/header/Header";
+import UserListCard from "../components/user-list-card/UserListCard";
 import { MessageSquare, Users, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hook";
 import { startUserListener } from "@/lib/listeners/userListeners";
-import { getChatId } from "@/utility/chat/ChatUtilityFun";
 import { socket } from "@/lib/socket/socket";
 import Loader from "@/utility/loader/Loader";
+import { User } from "@/types/types";
+import { useRouter } from "next/navigation";
+import { initSocketInboxListener } from "@/lib/listeners/dmListerns";
+import { fetchInbox } from "@/lib/api/chatApi";
 
 const tabs = ["Group Chat", "Nearby Chat", "DMs"];
 
-export function ChatPanel() {
+export default function UserChatLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [activeTab, setActiveTab] = useState("Nearby Chat");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentMessageUser, setCurrentMessageUser] = useState<User>();
   const [isDmsSliderOpen, setIsDmsSliderOpen] = useState(false);
   const [isUsersSliderOpen, setIsUsersSliderOpen] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
+  const navigate = useRouter();
   const { user: currentActiveUser } = useAppSelector((state) => state.auth);
-  const { allUsers, error, loading } = useAppSelector((state) => state.chat);
-  // console.log(loading, "checking loading");
+  const { allUsers, error, loading, inbox } = useAppSelector(
+    (state) => state.chat
+  );
+
+  console.log(inbox, "chekcing dms");
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeUsers: (() => void) | undefined;
 
     if (currentActiveUser?.authId) {
-      unsubscribe = startUserListener(dispatch, currentActiveUser.authId);
+      //Fetch the initial Inbox (DMs) from the API
+      fetchInbox(currentActiveUser.authId, dispatch);
+      // Initialize Real-time Socket Listeners for INBOX_UPDATE
+      initSocketInboxListener(dispatch);
+      // Start all Users Listener (Firestore)
+      unsubscribeUsers = startUserListener(dispatch, currentActiveUser.authId);
 
-      // Socket.IO Connection and Identification
-      if (!socket.connected) {
-        socket.connect();
-      }
-      // Emit USER_IDENTIFY to tell the server who we are
+      if (!socket.connected) socket.connect();
       socket.emit("USER_IDENTIFY", currentActiveUser.authId);
     }
 
-    // Disconnect socket on unmount
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-      if (socket.connected) {
-        // We rely on the server's 'disconnect' listener (on the user's socket)
-      }
+      if (unsubscribeUsers) unsubscribeUsers();
+      socket.off("INBOX_UPDATE");
+      socket.off("COUNT_RESET");
     };
   }, [dispatch, currentActiveUser?.authId]);
 
   const handleUserSelect = async (user: User) => {
-    if (!currentActiveUser) return;
-
-    const chatId = getChatId(currentActiveUser.authId, user.authId);
-    setCurrentChatId(chatId);
-    setCurrentMessageUser(user);
-
     // Close mobile sliders
     setIsUsersSliderOpen(false);
     setIsDmsSliderOpen(false);
 
-    try {
-      const response = await fetch(
-        `http://localhost:5000/chats/${chatId}/messages`
-      );
-      const data = await response.json();
-
-      console.log(data, "checking data");
-      setMessages(data);
-    } catch (err) {
-      console.error("Failed to load history:", err);
-      setMessages([]);
-    }
+    console.log("User selected:", user);
+    navigate.push(`/user-chat/${user.authId}`);
   };
 
   const loggedInUser = {
@@ -97,15 +83,9 @@ export function ChatPanel() {
 
         {/* Main content area - takes remaining height */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left section - Main content */}
+          {/* Left section - Main content (children render here) */}
           <div className="flex flex-1 flex-col lg:border-r border-white/10">
-            {/* <ChatBox
-              selectedUser={currentMessageUser}
-              messages={messages}
-              currentUser={currentActiveUser}
-              onSendMessage={handleSendMessage}
-              setCurrentMessageUser={handleUserSelect}
-            /> */}
+            {children}
           </div>
 
           {/* Right sidebar - All Users (Desktop only) */}
@@ -113,7 +93,6 @@ export function ChatPanel() {
             <div className="custom-scrollbar flex-1 overflow-y-auto">
               {loading ? (
                 <div>
-                  {" "}
                   <Loader LoadingText="getting users..." />
                 </div>
               ) : (
@@ -236,5 +215,3 @@ export function ChatPanel() {
     </div>
   );
 }
-
-export default ChatPanel;

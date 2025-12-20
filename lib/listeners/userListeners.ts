@@ -1,4 +1,3 @@
-// lib/store/slices/listeners/userListener.ts
 import {
   collection,
   onSnapshot,

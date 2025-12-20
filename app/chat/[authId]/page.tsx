@@ -1,21 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import UserListCard from "../user-list-card/UserListCard";
-import Header from "../header/Header";
-// return <ChatContainer showDmsTab={true} />;
+// import UserListCard from "../user-list-card/UserListCard";
+// import Header from "../header/Header";
 import { Message, User } from "@/types/types";
-import { ChatBox } from "../chat-box/Chatbox";
+// import { ChatBox } from "../chat-box/Chatbox";
 import { MessageSquare, Users, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hook";
 import { startUserListener } from "@/lib/listeners/userListeners";
 import { getChatId } from "@/utility/chat/ChatUtilityFun";
 import { socket } from "@/lib/socket/socket";
 import Loader from "@/utility/loader/Loader";
+import UserListCard from "@/app/components/user-list-card/UserListCard";
+import ChatBox from "@/app/components/chat-box/Chatbox";
+import Header from "@/app/components/header/Header";
 
-const tabs = ["Group Chat", "Nearby Chat", "DMs"];
+const tabs = ["Group Chat", "Nearby Chat"];
 
-export function ChatPanel() {
+export default function PersonalChat() {
   const [activeTab, setActiveTab] = useState("Nearby Chat");
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessageUser, setCurrentMessageUser] = useState<User>();
@@ -53,6 +55,38 @@ export function ChatPanel() {
     };
   }, [dispatch, currentActiveUser?.authId]);
 
+  const handleReceiveMessage = useCallback(
+    (payload: any) => {
+      // The payload comes from the backend's io.to().emit('RECEIVE_MESSAGE', payload)
+      const newMessage: Message = {
+        id: payload.id || Date.now().toString(),
+        senderId: payload.senderId,
+        content: payload.content,
+        timestamp: new Date(payload.timestamp),
+        type: payload.type || "text",
+        mediaUrl: payload.mediaUrl,
+      };
+
+      // Only add the message to the state if it belongs to the currently active chat
+      if (payload.chatId === currentChatId) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
+
+      //If chatId != currentChatId, show a notification/DM badge
+    },
+    [currentChatId]
+  );
+
+  useEffect(() => {
+    // Set up the listener when the component mounts
+    socket.on("RECEIVE_MESSAGE", handleReceiveMessage);
+
+    // Cleanup: Remove the listener when the component unmounts
+    return () => {
+      socket.off("RECEIVE_MESSAGE", handleReceiveMessage);
+    };
+  }, [handleReceiveMessage]);
+
   const handleUserSelect = async (user: User) => {
     if (!currentActiveUser) return;
 
@@ -78,6 +112,23 @@ export function ChatPanel() {
     }
   };
 
+  const handleSendMessage = useCallback(
+    (text: string, type: "text" | "image" | "video", mediaUrl?: string) => {
+      if (!currentActiveUser || !currentMessageUser) return;
+
+      const payload = {
+        recipientId: currentMessageUser.authId,
+        content: text,
+        type: type,
+        mediaUrl: mediaUrl,
+      };
+
+      // Emit the message to the backend for persistence & delivery
+      socket.emit("SEND_MESSAGE", payload);
+    },
+    [currentActiveUser, currentMessageUser]
+  );
+
   const loggedInUser = {
     name: currentActiveUser?.name || "Unknown",
     avatar: currentActiveUser?.name?.[0]?.toUpperCase() || "?",
@@ -93,19 +144,20 @@ export function ChatPanel() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           userCount={allUsers?.length || 0}
+          isPersonal={true}
         />
 
         {/* Main content area - takes remaining height */}
         <div className="flex flex-1 overflow-hidden">
           {/* Left section - Main content */}
           <div className="flex flex-1 flex-col lg:border-r border-white/10">
-            {/* <ChatBox
+            <ChatBox
               selectedUser={currentMessageUser}
               messages={messages}
               currentUser={currentActiveUser}
               onSendMessage={handleSendMessage}
               setCurrentMessageUser={handleUserSelect}
-            /> */}
+            />
           </div>
 
           {/* Right sidebar - All Users (Desktop only) */}
@@ -236,5 +288,3 @@ export function ChatPanel() {
     </div>
   );
 }
-
-export default ChatPanel;
